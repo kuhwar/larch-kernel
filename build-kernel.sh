@@ -49,7 +49,9 @@ CFG_XZ="/usr/src/linux-config-${SRC_PKG#linux-source-}/config.amd64_none_amd64.x
 TAG="$DEB_VER.larch$CFG_REV"
 
 log "Building $SRC_PKG $DEB_VER → release $TAG"
-BUILD="${KBUILD_DIR:-/var/tmp/kbuild}"
+# KBUILD_DIR is where the build tree goes (CI points it at a mounted scratch
+# disk); build in a subdirectory, since a mount point itself can't be removed.
+BUILD="${KBUILD_DIR:-/var/tmp}/larch-kbuild"
 rm -rf "$BUILD"
 mkdir -p "$BUILD"
 tar -xaf "$SRC_TAR" -C "$BUILD"
