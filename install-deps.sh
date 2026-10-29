@@ -1,6 +1,7 @@
 #!/bin/sh
 # install-deps.sh — install what build-kernel.sh needs on Debian trixie (as root):
 # Debian's patched kernel source and its amd64 config, plus the toolchain.
+# zstd: Debian's config compresses the kernel image with it (KERNEL_ZSTD).
 set -eu
 
 export DEBIAN_FRONTEND=noninteractive
@@ -19,5 +20,6 @@ apt-get install -y --no-install-recommends \
     cpio \
     rsync \
     xz-utils \
+    zstd \
     debhelper \
     ca-certificates
