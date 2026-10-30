@@ -6,17 +6,20 @@ needed to mount the root filesystem switched from modules to built-in:
 
 | Option | Why |
 |---|---|
-| `EXT4_FS` | root (`LARCHSYS`) and the other larch-os partitions |
+| `SQUASHFS`, `SQUASHFS_ZSTD` | root: `LARCHSYS` is the zstd squashfs image written raw onto the partition |
+| `EXT4_FS` | the other larch-os partitions (`LARCHCONF`, `LARCHHOME`) |
 | `BLK_DEV_NVME` | NVMe SSDs |
 | `ATA`, `SATA_AHCI`, `SCSI`, `BLK_DEV_SD` | SATA disks |
 | `VIRTIO_BLK`, `SCSI_VIRTIO` | QEMU/KVM disks |
+| `USB`, `USB_STORAGE`, `USB_UAS`, xHCI/EHCI/OHCI/UHCI host controllers | USB disks |
 
 That lets larch-os boot with **no initramfs**: the kernel mounts
-`root=PARTLABEL=LARCHSYS` itself. Everything else is as Debian ships it (still
+`root=PARTLABEL=LARCHSYS rootfstype=squashfs` itself. Everything else is as Debian ships it (still
 modules). Debug info is off, and Debian's signing-key paths are cleared since
 they only exist in Debian's own build.
 
-USB storage stays a module, so an installed system can't boot from a USB disk.
+A Renesas uPD72020x USB 3 controller without a ROM needs firmware the kernel
+can't read before root is mounted, so a disk behind one won't boot.
 
 ## Releases
 

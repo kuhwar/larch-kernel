@@ -23,7 +23,7 @@ die() { echo "ERROR: $*" >&2; exit 1; }
 
 # Bump when the config changes below, so a new release is cut for the same
 # Debian source version.
-CFG_REV=1
+CFG_REV=2
 SRC_PKG=linux-source-6.12
 
 # Installed version of the Debian source package, else apt's candidate.
@@ -60,17 +60,25 @@ cd "$BUILD/$SRC_PKG"
 xzcat "$CFG_XZ" > .config
 
 # Root-mount path, built in:
-#   EXT4_FS      — the LARCHSYS / LARCHCONF / LARCHHOME filesystem
+#   SQUASHFS + SQUASHFS_ZSTD — LARCHSYS: the zstd squashfs image, written raw
+#                  onto the partition (root=PARTLABEL=LARCHSYS rootfstype=squashfs)
+#   EXT4_FS      — the LARCHCONF / LARCHHOME filesystem
 #   BLK_DEV_NVME — NVMe SSDs
 #   ATA + SATA_AHCI + SCSI + BLK_DEV_SD — SATA disks (libata sits on SCSI)
 #   VIRTIO_BLK + SCSI_VIRTIO — QEMU/KVM disks
-# USB storage is NOT built in, so an installed system can't boot from a USB disk.
+#   USB + USB_STORAGE + USB_UAS — USB disks (on SCSI too), behind the xHCI
+#                  (USB 3), EHCI (USB 2) and OHCI/UHCI (USB 1.1) host controllers.
+#                  XHCI_PCI_RENESAS must be built in too, or Kconfig holds
+#                  XHCI_PCI at =m; a Renesas uPD72020x without a ROM still
+#                  needs its firmware, which isn't readable before root mounts.
 #
 # Debian-specific settings that don't work outside Debian's build:
 #   SYSTEM_TRUSTED_KEYS — points at debian/certs/, not in linux-source
 #   DEBUG_INFO          — off: halves build time, no -dbg package
 scripts/config --file .config \
     --set-str LOCALVERSION "-larch" \
+    --enable  SQUASHFS \
+    --enable  SQUASHFS_ZSTD \
     --enable  EXT4_FS \
     --enable  BLK_DEV_NVME \
     --enable  ATA \
@@ -79,6 +87,17 @@ scripts/config --file .config \
     --enable  BLK_DEV_SD \
     --enable  VIRTIO_BLK \
     --enable  SCSI_VIRTIO \
+    --enable  USB \
+    --enable  USB_XHCI_HCD \
+    --enable  USB_XHCI_PCI \
+    --enable  USB_XHCI_PCI_RENESAS \
+    --enable  USB_EHCI_HCD \
+    --enable  USB_EHCI_PCI \
+    --enable  USB_OHCI_HCD \
+    --enable  USB_OHCI_HCD_PCI \
+    --enable  USB_UHCI_HCD \
+    --enable  USB_STORAGE \
+    --enable  USB_UAS \
     --set-str SYSTEM_TRUSTED_KEYS "" \
     --set-str SYSTEM_REVOCATION_KEYS "" \
     --disable DEBUG_INFO_DWARF_TOOLCHAIN_DEFAULT \
@@ -88,7 +107,10 @@ scripts/config --file .config \
     --enable  DEBUG_INFO_NONE
 make olddefconfig >/dev/null
 
-for opt in EXT4_FS BLK_DEV_NVME ATA SATA_AHCI SCSI BLK_DEV_SD VIRTIO_BLK SCSI_VIRTIO; do
+for opt in SQUASHFS SQUASHFS_ZSTD EXT4_FS BLK_DEV_NVME ATA SATA_AHCI SCSI BLK_DEV_SD \
+           VIRTIO_BLK SCSI_VIRTIO USB USB_XHCI_HCD USB_XHCI_PCI USB_XHCI_PCI_RENESAS \
+           USB_EHCI_HCD USB_EHCI_PCI USB_OHCI_HCD USB_OHCI_HCD_PCI USB_UHCI_HCD \
+           USB_STORAGE USB_UAS; do
     grep -qx "CONFIG_$opt=y" .config || die "CONFIG_$opt did not end up built-in (=y) after olddefconfig"
 done
 log "Root-mount drivers are built in"
