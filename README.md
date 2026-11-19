@@ -1,5 +1,8 @@
 # larch-kernel
 
+> **Archived.** larch-os now uses Fedora's stock kernel, so this custom build is
+> no longer maintained.
+
 The kernel for [larch-os](https://github.com/kuhwar/larch-os): Debian trixie's
 own `linux-source-6.12`, built with Debian's amd64 config, with only the drivers
 needed to mount the root filesystem switched from modules to built-in:
